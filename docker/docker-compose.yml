@@ -1,0 +1,85 @@
+version: '3.8'
+
+services:
+  cis-testing:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    image: cis-testing:latest
+    container_name: cis-al2-testing
+    hostname: cis-testing
+    privileged: true
+    volumes:
+      # Mount scripts for development
+      - ../scripts:/opt/cis/scripts:ro
+      - ../config:/opt/cis/config:ro
+      - ../tools:/opt/cis/tools:ro
+      # Persistent volumes for logs and backups
+      - cis-logs:/var/log/cis-remediation
+      - cis-backups:/var/backups/cis
+      # Mount for testing specific configurations
+      - ./test-configs:/opt/cis/test-configs:ro
+    environment:
+      - TEST_GROUP=1
+      - TEST_MODE=dry-run
+      - LOG_LEVEL=INFO
+      - CIS_WORK_DIR=/tmp/cis-scripts
+      - CIS_LOG_FILE=/var/log/cis-remediation/cis-test.log
+      - CIS_BACKUP_DIR=/var/backups/cis
+    networks:
+      - cis-network
+    stdin_open: true
+    tty: true
+    command: ["init"]
+
+  # Inspector simulation service (for testing)
+  cis-inspector:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    image: cis-testing:latest
+    container_name: cis-inspector-sim
+    hostname: cis-inspector
+    privileged: true
+    volumes:
+      - ../scripts:/opt/cis/scripts:ro
+      - ../tools:/opt/cis/tools:ro
+      - cis-reports:/opt/cis/reports
+    environment:
+      - TEST_GROUP=all
+      - TEST_MODE=scan-only
+      - LOG_LEVEL=INFO
+    networks:
+      - cis-network
+    profiles:
+      - inspector
+    command: ["prescan"]
+
+volumes:
+  cis-logs:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ./volumes/logs
+  
+  cis-backups:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ./volumes/backups
+      
+  cis-reports:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ./volumes/reports
+
+networks:
+  cis-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16

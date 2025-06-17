@@ -1,0 +1,13 @@
+# CIS Controls to Exclude from Remediation
+# Format: One CIS ID per line
+# Example: 1.1.1
+# Use * for wildcards (e.g., 1.1.* for all 1.1.x controls)
+
+# Controls that may break system functionality
+# 1.1.8  # Disable mounting of FAT filesystems (may break USB)
+
+# Controls requiring manual configuration
+# 5.2.4  # SSH configuration requiring custom settings
+
+# Controls that are environment-specific
+# 3.2.8  # Network configuration that varies by environment
